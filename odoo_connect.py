@@ -4,49 +4,60 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ODOO_URL = os.getenv("ODOO_URL", "https://www.odoo.com")
-EMAIL    = os.getenv("ODOO_EMAIL")
+URL      = os.getenv("ODOO_URL", "https://sticker.cloud-erp.ma")
+DB       = os.getenv("ODOO_DB",  "sticker")
+USER     = os.getenv("ODOO_USER", "admin")
 PASSWORD = os.getenv("ODOO_PASSWORD")
 
-def list_databases(url: str) -> list:
-    db_endpoint = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/db")
-    try:
-        return db_endpoint.list()
-    except Exception as e:
-        return [f"ERROR: {e}"]
+common = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/common")
+models = xmlrpc.client.ServerProxy(f"{URL}/xmlrpc/2/object")
 
-def authenticate(url: str, db: str, email: str, password: str) -> int | None:
-    common = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/common")
-    uid = common.authenticate(db, email, password, {})
-    return uid if uid else None
 
-def get_server_version(url: str) -> str:
-    common = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/common")
+def get_version() -> dict:
     return common.version()
 
+
+def authenticate() -> int:
+    uid = common.authenticate(DB, USER, PASSWORD, {})
+    if not uid:
+        raise ValueError("Authentication failed — check your credentials or database name.")
+    return uid
+
+
+def search_read(uid: int, model: str, domain: list, fields: list, limit: int = 10) -> list:
+    return models.execute_kw(
+        DB, uid, PASSWORD,
+        model, "search_read",
+        [domain],
+        {"fields": fields, "limit": limit},
+    )
+
+
 if __name__ == "__main__":
-    print(f"Connecting to: {ODOO_URL}")
-    print(f"User: {EMAIL}\n")
+    print(f"Connecting to : {URL}")
+    print(f"Database      : {DB}")
+    print(f"User          : {USER}\n")
 
     # Server version
     try:
-        version = get_server_version(ODOO_URL)
-        print(f"Server version: {version}")
+        v = get_version()
+        print(f"Server version : {v.get('server_version', v)}")
     except Exception as e:
-        print(f"Could not fetch server version: {e}")
+        print(f"Version check failed: {e}")
 
-    # List available databases
-    print("\nAvailable databases:")
-    dbs = list_databases(ODOO_URL)
-    for db in dbs:
-        print(f"  - {db}")
+    # Authentication
+    try:
+        uid = authenticate()
+        print(f"Authentication : OK  (uid={uid})\n")
+    except Exception as e:
+        print(f"Authentication : FAILED — {e}")
+        raise SystemExit(1)
 
-    # Try to authenticate on each database
-    print("\nTrying authentication...")
-    for db in dbs:
-        if isinstance(db, str) and not db.startswith("ERROR"):
-            uid = authenticate(ODOO_URL, db, EMAIL, PASSWORD)
-            if uid:
-                print(f"  [OK] Authenticated on '{db}' — uid={uid}")
-            else:
-                print(f"  [FAIL] Authentication failed on '{db}'")
+    # Quick smoke-test: list first 5 products
+    try:
+        products = search_read(uid, "product.template", [], ["name", "list_price", "type"], limit=5)
+        print("Sample products:")
+        for p in products:
+            print(f"  [{p['id']}] {p['name']}  —  price={p['list_price']}  type={p['type']}")
+    except Exception as e:
+        print(f"Could not fetch products: {e}")
