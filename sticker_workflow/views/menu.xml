@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menu principal -->
+    <menuitem id="menu_sticker_root"
+              name="Fabrication Stickers"
+              sequence="10"
+              web_icon="sticker_workflow,static/description/icon.png"/>
+
+    <!-- Sous-menu : Commandes -->
+    <menuitem id="menu_sticker_orders"
+              name="Commandes"
+              parent="menu_sticker_root"
+              action="action_sticker_order"
+              sequence="10"/>
+
+    <!-- Sous-menu : Configuration -->
+    <menuitem id="menu_sticker_config"
+              name="Configuration"
+              parent="menu_sticker_root"
+              sequence="99"/>
+
+    <menuitem id="menu_sticker_stages"
+              name="Étapes de fabrication"
+              parent="menu_sticker_config"
+              action="action_sticker_stage"
+              sequence="10"/>
+
+    <!-- Action pour les étapes (config) -->
+    <record id="action_sticker_stage" model="ir.actions.act_window">
+        <field name="name">Étapes de fabrication</field>
+        <field name="res_model">sticker.stage</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

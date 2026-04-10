@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="stage_new" model="sticker.stage">
+        <field name="name">Nouvelle commande</field>
+        <field name="sequence">1</field>
+        <field name="color">0</field>
+        <field name="legend_normal">En attente de traitement</field>
+        <field name="legend_done">Commande confirmée</field>
+        <field name="legend_blocked">Informations manquantes</field>
+    </record>
+
+    <record id="stage_artwork" model="sticker.stage">
+        <field name="name">Validation artwork</field>
+        <field name="sequence">2</field>
+        <field name="color">3</field>
+        <field name="description">Vérification et validation du fichier graphique client</field>
+        <field name="legend_normal">Fichier en cours d'analyse</field>
+        <field name="legend_done">Fichier validé, prêt à imprimer</field>
+        <field name="legend_blocked">Fichier rejeté — en attente du client</field>
+    </record>
+
+    <record id="stage_printing" model="sticker.stage">
+        <field name="name">Impression</field>
+        <field name="sequence">3</field>
+        <field name="color">2</field>
+        <field name="description">Lancement de l'impression sur machine</field>
+        <field name="legend_normal">Impression en cours</field>
+        <field name="legend_done">Impression terminée</field>
+        <field name="legend_blocked">Problème machine ou encre</field>
+    </record>
+
+    <record id="stage_cutting" model="sticker.stage">
+        <field name="name">Découpe / Finition</field>
+        <field name="sequence">4</field>
+        <field name="color">6</field>
+        <field name="description">Découpe, pelliculage, refente et finitions</field>
+        <field name="legend_normal">Découpe en cours</field>
+        <field name="legend_done">Découpe terminée, prêt pour le contrôle</field>
+        <field name="legend_blocked">Problème de découpe</field>
+    </record>
+
+    <record id="stage_qc" model="sticker.stage">
+        <field name="name">Contrôle qualité</field>
+        <field name="sequence">5</field>
+        <field name="color">1</field>
+        <field name="description">Vérification finale avant expédition</field>
+        <field name="legend_normal">Contrôle en cours</field>
+        <field name="legend_done">Contrôle OK, prêt à expédier</field>
+        <field name="legend_blocked">Non-conformité détectée</field>
+    </record>
+
+    <record id="stage_shipped" model="sticker.stage">
+        <field name="name">Expédié</field>
+        <field name="sequence">6</field>
+        <field name="color">10</field>
+        <field name="is_done">True</field>
+        <field name="fold">True</field>
+        <field name="legend_normal">Commande expédiée</field>
+        <field name="legend_done">Livraison confirmée</field>
+        <field name="legend_blocked">Problème de livraison</field>
+    </record>
+
+    <!-- Séquence pour la numérotation automatique -->
+    <record id="seq_sticker_order" model="ir.sequence">
+        <field name="name">Commande Sticker</field>
+        <field name="code">sticker.order</field>
+        <field name="prefix">STK/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+</odoo>

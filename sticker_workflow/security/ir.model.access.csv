@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sticker_order_user,sticker.order.user,model_sticker_order,base.group_user,1,1,1,0
+access_sticker_order_manager,sticker.order.manager,model_sticker_order,base.group_system,1,1,1,1
+access_sticker_stage_user,sticker.stage.user,model_sticker_stage,base.group_user,1,0,0,0
+access_sticker_stage_manager,sticker.stage.manager,model_sticker_stage,base.group_system,1,1,1,1
