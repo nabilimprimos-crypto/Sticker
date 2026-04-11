@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sticker-workflow
+    runtime: python
+    rootDir: web
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 2 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sticker-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: sticker-db
+    databaseName: sticker
+    user: sticker
+    plan: free
