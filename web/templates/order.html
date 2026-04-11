@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ order.reference }} — Sticker Workflow{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+  <h4 class="mb-0 fw-bold">{{ order.reference }}</h4>
+  {% if order.priority %}
+    <span class="badge bg-danger"><i class="bi bi-lightning-fill"></i> Urgent</span>
+  {% endif %}
+  <button class="btn btn-sm {% if order.priority %}btn-danger{% else %}btn-outline-danger{% endif %} ms-2"
+          onclick="togglePriority('{{ order.reference }}')">
+    <i class="bi bi-lightning-fill"></i>
+    {% if order.priority %}Retirer urgence{% else %}Marquer urgent{% endif %}
+  </button>
+</div>
+
+<div class="row g-4">
+
+  <!-- Colonne gauche -->
+  <div class="col-lg-8">
+
+    <!-- Progression par étapes -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>Étapes de fabrication</h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% for s in stages %}
+          <button
+            class="btn btn-sm {% if order.stage_id == s.id %}text-white{% else %}btn-outline-secondary{% endif %}"
+            style="{% if order.stage_id == s.id %}background:{{ s.color }};border-color:{{ s.color }}{% elif order.stage_id > s.id %}opacity:.5{% endif %}"
+            onclick="setStage('{{ order.reference }}', {{ s.id }}, this)">
+            {% if order.stage_id > s.id %}<i class="bi bi-check2 me-1"></i>{% endif %}
+            {{ s.name }}
+          </button>
+          {% endfor %}
+        </div>
+        <!-- Barre de progression -->
+        <div class="progress" style="height:8px;">
+          <div class="progress-bar" role="progressbar"
+               style="width:{{ order.stage_pct }}%; background:{{ stages[order.stage_id-1].color }}"
+               id="progress-bar">
+          </div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <small class="text-muted">Étape {{ order.stage_id }}/{{ stages|length }}</small>
+          <small class="text-muted" id="stage-label">{{ order.stage_name }}</small>
+        </div>
+
+        <!-- Bouton étape suivante -->
+        {% if order.stage_id < stages|length %}
+        <div class="mt-3">
+          <button class="btn btn-primary" onclick="nextStage('{{ order.reference }}')">
+            <i class="bi bi-arrow-right-circle me-1"></i>Passer à l'étape suivante
+          </button>
+        </div>
+        {% else %}
+        <div class="mt-3">
+          <span class="badge bg-success p-2"><i class="bi bi-check-circle me-1"></i>Commande expédiée</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Artwork -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-image me-2"></i>État du fichier artwork</h6>
+        <div class="d-flex flex-wrap gap-2">
+          {% for key, (label, color) in artwork_states.items() %}
+          <button
+            class="btn btn-sm {% if order.artwork_state == key %}btn-{{ color }} text-white{% else %}btn-outline-{{ color }}{% endif %}"
+            onclick="setArtwork('{{ order.reference }}', '{{ key }}')">
+            {{ label }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="mt-2">
+          <span class="badge bg-{{ order.artwork_label[1] }} p-2" id="artwork-badge">
+            {{ order.artwork_label[0] }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Historique</h6>
+        <div class="timeline">
+          {% for h in history %}
+          <div class="timeline-item">
+            <div class="fw-semibold" style="font-size:.9rem">{{ h.action }}</div>
+            {% if h.detail %}<div class="text-muted small">{{ h.detail }}</div>{% endif %}
+            <div class="text-muted" style="font-size:.75rem">{{ h.date }}</div>
+          </div>
+          {% else %}
+          <div class="text-muted small">Aucun historique.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colonne droite : infos -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Informations</h6>
+        <table class="table table-sm table-borderless mb-0">
+          <tr><th class="text-muted fw-normal" style="width:45%">Client</th><td class="fw-semibold">{{ order.client }}</td></tr>
+          <tr><th class="text-muted fw-normal">Produit</th><td>{{ order.product }}</td></tr>
+          <tr><th class="text-muted fw-normal">Quantité</th><td>{{ order.quantity }}</td></tr>
+          {% if order.width_mm or order.height_mm %}
+          <tr><th class="text-muted fw-normal">Dimensions</th><td>{{ order.width_mm|int }} × {{ order.height_mm|int }} mm</td></tr>
+          {% endif %}
+          <tr>
+            <th class="text-muted fw-normal">Matière</th>
+            <td>{{ {'vinyl':'Vinyle','paper':'Papier','polyester':'Polyester','transparent':'Transparent'}.get(order.material, order.material) }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted fw-normal">Finition</th>
+            <td>{{ {'glossy':'Brillant','matte':'Mat','uv':'Vernis UV'}.get(order.finish, order.finish) }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted fw-normal">Découpe</th>
+            <td>{{ {'square':'Carré/Rectangle','contour':'Forme','kiss_cut':'Kiss-cut'}.get(order.cut_type, order.cut_type) }}</td>
+          </tr>
+          {% if order.date_deadline %}
+          <tr><th class="text-muted fw-normal">Livraison</th><td class="text-warning fw-bold">{{ order.date_deadline }}</td></tr>
+          {% endif %}
+          <tr><th class="text-muted fw-normal">Créée le</th><td>{{ order.date_created }}</td></tr>
+          <tr><th class="text-muted fw-normal">Mise à jour</th><td>{{ order.date_updated }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    {% if order.notes %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-2"><i class="bi bi-sticky me-2"></i>Notes</h6>
+        <p class="mb-0 text-muted" style="font-size:.9rem">{{ order.notes }}</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="toast" class="toast align-items-center text-white border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body fw-semibold" id="toast-msg"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const toast    = new bootstrap.Toast(document.getElementById('toast'), {delay: 2500});
+const toastEl  = document.getElementById('toast');
+const toastMsg = document.getElementById('toast-msg');
+
+function notify(msg, type='success') {
+  toastEl.className = `toast align-items-center text-white border-0 bg-${type}`;
+  toastMsg.textContent = msg;
+  toast.show();
+}
+
+async function api(url, body) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+async function nextStage(ref) {
+  const data = await api(`/api/order/${ref}/next`, {});
+  if (data.error) { notify(data.error, 'danger'); return; }
+  notify(`Étape : ${data.stage_name}`);
+  setTimeout(() => location.reload(), 900);
+}
+
+async function setStage(ref, stageId, btn) {
+  const data = await api(`/api/order/${ref}/stage`, {stage_id: stageId});
+  if (data.error) { notify(data.error, 'danger'); return; }
+  notify(`Étape : ${data.stage_name}`);
+  setTimeout(() => location.reload(), 900);
+}
+
+async function setArtwork(ref, state) {
+  const data = await api(`/api/order/${ref}/artwork`, {state});
+  if (data.error) { notify(data.error, 'danger'); return; }
+  notify(`Artwork : ${data.label}`);
+  setTimeout(() => location.reload(), 900);
+}
+
+async function togglePriority(ref) {
+  const data = await api(`/api/order/${ref}/priority`, {});
+  if (data.error) { notify(data.error, 'danger'); return; }
+  notify(data.priority ? 'Marqué urgent' : 'Priorité normale');
+  setTimeout(() => location.reload(), 900);
+}
+</script>
+{% endblock %}

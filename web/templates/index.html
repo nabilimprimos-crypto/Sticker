@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord — Sticker Workflow{% endblock %}
+
+{% block content %}
+
+<!-- Stats bar -->
+<div class="row g-3 mb-4">
+  {% set urgent = orders | selectattr('priority', 'equalto', 1) | list | length %}
+  {% set done   = orders | selectattr('stage_id', 'equalto', 6) | list | length %}
+  {% set art_ko = orders | selectattr('artwork_state', 'equalto', 'rejected') | list | length %}
+
+  <div class="col-6 col-md-3">
+    <div class="card stat-card bg-white shadow-sm p-3 text-center">
+      <div class="fs-1 fw-bold text-primary">{{ total }}</div>
+      <div class="text-muted small">Commandes totales</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card bg-white shadow-sm p-3 text-center">
+      <div class="fs-1 fw-bold text-danger">{{ urgent }}</div>
+      <div class="text-muted small">Urgentes</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card bg-white shadow-sm p-3 text-center">
+      <div class="fs-1 fw-bold text-warning">{{ art_ko }}</div>
+      <div class="text-muted small">Artwork rejeté</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card bg-white shadow-sm p-3 text-center">
+      <div class="fs-1 fw-bold text-success">{{ done }}</div>
+      <div class="text-muted small">Expédiées</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search + New -->
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <form class="d-flex search-box" method="get">
+    <input class="form-control" name="q" placeholder="N° commande, client..." value="{{ q }}"/>
+    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+  </form>
+  {% if q %}
+    <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x"></i> Effacer</a>
+    <span class="text-muted small">{{ total }} résultat(s) pour "{{ q }}"</span>
+  {% endif %}
+  <a href="/order/new" class="btn btn-primary ms-auto">
+    <i class="bi bi-plus-lg me-1"></i>Nouvelle commande
+  </a>
+</div>
+
+<!-- Kanban board -->
+<div class="d-flex gap-3 pb-4" style="overflow-x:auto;">
+  {% for col in kanban %}
+  <div class="kanban-col flex-shrink-0">
+    <div class="kanban-header" style="background:{{ col.stage.color }}">
+      <i class="bi bi-circle-fill me-1" style="font-size:.6rem"></i>
+      {{ col.stage.name }}
+      <span class="badge bg-white text-dark ms-2">{{ col.orders | length }}</span>
+    </div>
+    <div class="kanban-body" id="col-{{ col.stage.id }}">
+      {% for o in col.orders %}
+      <div class="order-card {% if o.priority %}urgent{% endif %}"
+           onclick="window.location='/order/{{ o.reference }}'">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <small class="fw-bold text-primary">{{ o.reference }}</small>
+          {% if o.priority %}
+            <span class="badge bg-danger"><i class="bi bi-lightning-fill"></i> Urgent</span>
+          {% endif %}
+        </div>
+        <div class="fw-semibold text-truncate" style="font-size:.9rem">{{ o.product }}</div>
+        <div class="text-muted small text-truncate"><i class="bi bi-person me-1"></i>{{ o.client }}</div>
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+          <span class="badge bg-{{ o.artwork_label[1] }} bg-opacity-75" style="font-size:.7rem">
+            {{ o.artwork_label[0] }}
+          </span>
+          {% if o.date_deadline %}
+          <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ o.date_deadline }}</small>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="text-muted text-center py-4" style="font-size:.82rem">Aucune commande</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
